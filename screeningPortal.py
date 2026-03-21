@@ -31,18 +31,22 @@ YEAR_MIN = 2021
 YEAR_MAX = 2026
 
 INCLUSION_CRITERIA = [
-    "Venue Quality: Peer-reviewed empirical study OR taxonomy paper published in a recognised HCI or Computer Science venue (ACM, IEEE, or Scopus-indexed journal or conference proceedings).",
-    "Interaction Modality: Primary or significant focus on conversational interaction (voice or text) or adaptive AI interfaces; studies combining conversational and GUI elements are included where the conversational component is a substantive focus of analysis.",
-    "Outcome Measurement: Reports measurable user behavioural outcomes (e.g., trust, data disclosure, engagement, autonomy).",
-    f"Temporal Boundary: Published between {YEAR_MIN} - {YEAR_MAX}.",
-    "Language: Full text available in English.",
+    "**Study type:** Peer-reviewed empirical study or taxonomy/review paper with substantive analytical contribution.",
+    "**Publication source:** ACM, IEEE, or Scopus-indexed venue; full text accessible.",
+    "**Interaction focus:** Conversational AI, chatbots, voice assistants, LLM interfaces, or adaptive AI with conversational as primary component.",
+    "**Mixed interfaces:** GUI + conversational eligible only if conversational is substantive focus.",
+    "**Outcomes:** At least one observable user outcome (trust, disclosure, engagement, autonomy, decision-making, etc.).",
+    f"**Date range:** Published {YEAR_MIN}–{YEAR_MAX}.",
+    "**Language:** Full text in English.",
 ]
 
 EXCLUSION_CRITERIA = [
-    "Legacy Interfaces: Traditional GUI-based dark patterns without a conversational or AI-adaptive component.",
-    "Pure Technical/NLP: Pure NLP algorithmic papers evaluating model weights without human interaction.",
-    "Pure Theory: Purely theoretical AI ethics papers lacking empirical interface evaluation.",
-    "Non-Interactive AI: Non-interactive AI systems (e.g., static image generation).",
+    "**Legacy interfaces:** Traditional GUI dark patterns without conversational/adaptive AI.",
+    "**Pure technical:** Model architecture, training, benchmarks, or prompting without user evaluation.",
+    "**Pure theory:** Conceptual ethics, policy, or opinion without empirical analysis.",
+    "**Non-interactive AI:** No live user interaction (e.g., static image generation).",
+    "**No outcomes:** System/prototype described but no user-facing outcomes reported.",
+    "**Ineligible types:** Abstracts only, editorials, theses, patents, grey literature.",
 ]
 
 HIGHLIGHT_PATTERNS = {
@@ -432,11 +436,28 @@ total_papers = len(df)
 screened_count = total_papers - len(pending_papers)
 progress_ratio = screened_count / total_papers if total_papers else 0
 
+# Find the last screened paper (for "Go Back" functionality)
+screened_papers = df[df["Reviewer_Decision"] != "Pending"]
+last_screened_index = None
+if not screened_papers.empty:
+    last_screened_index = screened_papers.index[-1]
+
 
 # --------------------------------------------------
 # Header
 # --------------------------------------------------
 st.markdown("")
+
+# Go Back button
+if last_screened_index is not None:
+    col_back, col_title, col_spacer = st.columns([0.8, 2, 1])
+    with col_back:
+        if st.button("← Go Back", use_container_width=True):
+            # Reset the last screened paper to Pending
+            df.at[last_screened_index, "Reviewer_Decision"] = "Pending"
+            df.to_csv(target_file, index=False)
+            st.rerun()
+
 st.markdown(f'<div class="main-title">Screening Portal</div>', unsafe_allow_html=True)
 st.markdown(
     f'<div class="subtle-text">{escape(reviewer_name)} · reviewing 1 paper at a time · autosaving to {escape(target_file)}</div>',
