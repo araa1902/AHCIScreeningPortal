@@ -423,7 +423,13 @@ if selected_user == "Select your name..." or TEAM_MAPPING.get(selected_user) is 
     )
     st.stop()
 
-target_file = TEAM_MAPPING[selected_user]
+target_file = TEAM_MAPPING.get(selected_user)
+
+# Defensive check: ensure target_file is not None before proceeding
+if target_file is None:
+    st.error("Invalid selection. Please select a valid reviewer name from the sidebar.")
+    st.stop()
+
 reviewer_name = selected_user.split(" (")[0]
 
 if not os.path.exists(target_file):
