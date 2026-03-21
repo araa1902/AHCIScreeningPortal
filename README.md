@@ -36,7 +36,6 @@ Decisions save automatically to your CSV file.
 ## Files
 
 - `screeningPortal.py` - Screening interface
-- `mergeAudit.py` - Conflict analysis
 - `Pool_1_Reviewer_A.csv` - Aravind's papers
 - `Pool_1_Reviewer_B.csv` - Joel's papers
 - `Pool_2_Reviewer_C.csv` - Chris's papers
