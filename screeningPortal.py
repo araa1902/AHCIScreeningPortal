@@ -412,7 +412,8 @@ with st.sidebar:
     st.markdown("---")
     st.caption("Tip: work top to bottom. Use the criteria panel only when the abstract is ambiguous.")
 
-if TEAM_MAPPING[selected_user] is None:
+# Check if user has selected a valid option (not the default "Select your name...")
+if selected_user == "Select your name..." or TEAM_MAPPING.get(selected_user) is None:
     st.markdown("")
     st.markdown("")
     st.markdown('<div class="main-title">Systematic Review Phase 2</div>', unsafe_allow_html=True)
@@ -427,6 +428,7 @@ reviewer_name = selected_user.split(" (")[0]
 
 if not os.path.exists(target_file):
     st.error(f"File not found: {target_file}")
+    st.error(f"Expected file at: {target_file}")
     st.stop()
 
 df = load_data(target_file)
