@@ -2,6 +2,13 @@
 
 A systematic review screening tool for HCI research papers with an interactive screening interface and conflict analysis.
 
+## Team
+
+- **Member A: Aravind**
+- **Member B: Joel**
+- **Member C: Chris**
+- **Member D: Greg**
+
 ## Quick Start
 
 ### 1. Install Dependencies
