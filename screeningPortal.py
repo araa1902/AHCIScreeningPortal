@@ -31,22 +31,22 @@ YEAR_MIN = 2021
 YEAR_MAX = 2026
 
 INCLUSION_CRITERIA = [
-    "**Study type:** Peer-reviewed empirical study or taxonomy/review paper with substantive analytical contribution.",
-    "**Publication source:** ACM, IEEE, or Scopus-indexed venue; full text accessible.",
-    "**Interaction focus:** Conversational AI, chatbots, voice assistants, LLM interfaces, or adaptive AI with conversational as primary component.",
-    "**Mixed interfaces:** GUI + conversational eligible only if conversational is substantive focus.",
-    "**Outcomes:** At least one observable user outcome (trust, disclosure, engagement, autonomy, decision-making, etc.).",
-    f"**Date range:** Published {YEAR_MIN}–{YEAR_MAX}.",
+    "**Study type:** Peer-reviewed empirical study OR taxonomy/review paper directly relevant to conversational manipulation, deception, or dark patterns in AI. For taxonomy papers, outcome measurement not required.",
+    "**Publication source:** ACM, IEEE, Scopus-indexed venues, or recognised HCI venues (CHI, TOCHI, UIST, UbiComp, DIS, CSCW, PACM HCI, IJHCS, HCI Taylor & Francis). Interdisciplinary papers from Psychology, Cognitive Science, or Social Science eligible if examining conversational AI. arXiv only if peer-reviewed version confirmed or under review.",
+    "**Interaction focus:** Primary component is conversational AI, chatbots, voice assistants, LLM interfaces, or adaptive AI with conversational interaction.",
+    "**Mixed interfaces:** GUI + conversational eligible only if conversational is substantive focus, not merely incidental.",
+    "**Outcomes:** At least one observable user outcome (trust, disclosure, compliance, engagement, autonomy, decision-making, etc.). Required for empirical studies only.",
+    f"**Date range:** Published {YEAR_MIN}–{YEAR_MAX} inclusive.",
     "**Language:** Full text in English.",
 ]
 
 EXCLUSION_CRITERIA = [
-    "**Legacy interfaces:** Traditional GUI dark patterns without conversational/adaptive AI.",
-    "**Pure technical:** Model architecture, training, benchmarks, or prompting without user evaluation.",
-    "**Pure theory:** Conceptual ethics, policy, or opinion without empirical analysis.",
-    "**Non-interactive AI:** No live user interaction (e.g., static image generation).",
-    "**No outcomes:** System/prototype described but no user-facing outcomes reported.",
-    "**Ineligible types:** Abstracts only, editorials, theses, patents, grey literature.",
+    "**Legacy interfaces:** Traditional GUI dark patterns without conversational/adaptive AI; conversational element peripheral to core evaluation.",
+    "**Pure technical:** Model architecture, training, benchmarks, prompt engineering, or optimisation without user/human-subject evaluation.",
+    "**Pure theory:** Conceptual ethics, policy, or opinion without empirical interface analysis or structured taxonomy contribution.",
+    "**Non-interactive AI:** No live user interaction (e.g., static image generation, offline classification, batch processing).",
+    "**No outcomes:** System/prototype described without user-facing outcomes (empirical studies only; taxonomy papers exempt).",
+    "**Ineligible types:** Abstracts only, editorials, theses, patents, slides, grey literature. Unconfirmed arXiv preprints without peer-reviewed publication excluded.",
 ]
 
 HIGHLIGHT_PATTERNS = {
