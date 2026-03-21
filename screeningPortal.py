@@ -18,12 +18,15 @@ st.set_page_config(
 # --------------------------------------------------
 # Constants
 # --------------------------------------------------
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 TEAM_MAPPING = {
     "Select your name...": None,
-    "Aravind (Member A) - Pool 1": "Pool_1_Reviewer_A.csv",
-    "Joel (Member B) - Pool 1": "Pool_1_Reviewer_B.csv",
-    "Chris (Member C) - Pool 2": "Pool_2_Reviewer_C.csv",
-    "Greg (Member D) - Pool 2": "Pool_2_Reviewer_D.csv",
+    "Aravind (Member A) - Pool 1": os.path.join(SCRIPT_DIR, "Pool_1_Reviewer_A.csv"),
+    "Joel (Member B) - Pool 1": os.path.join(SCRIPT_DIR, "Pool_1_Reviewer_B.csv"),
+    "Chris (Member C) - Pool 2": os.path.join(SCRIPT_DIR, "Pool_2_Reviewer_C.csv"),
+    "Greg (Member D) - Pool 2": os.path.join(SCRIPT_DIR, "Pool_2_Reviewer_D.csv"),
 }
 
 DECISION_OPTIONS = ["Include", "For Consideration", "Exclude"]
