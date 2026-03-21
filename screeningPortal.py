@@ -290,7 +290,6 @@ st.markdown(
 # --------------------------------------------------
 # Helpers
 # --------------------------------------------------
-@st.cache_data(ttl=2)
 def load_data(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path)
     if "Reviewer_Decision" not in df.columns:
