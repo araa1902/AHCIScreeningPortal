@@ -23,8 +23,6 @@ pip install -r requirements.txt
 streamlit run screeningPortal.py
 ```
 
-Opens at `http://localhost:8501`
-
 ## How to Use
 
 1. **Select your name** from the sidebar dropdown
