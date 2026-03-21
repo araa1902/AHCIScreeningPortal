@@ -400,6 +400,8 @@ with st.sidebar:
     st.caption("Tip: work top to bottom. Use the criteria panel only when the abstract is ambiguous.")
 
 if TEAM_MAPPING[selected_user] is None:
+    st.markdown("")
+    st.markdown("")
     st.markdown('<div class="main-title">Systematic Review Phase 2</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="subtle-text">Select your name in the sidebar to load your assigned screening file.</div>',
