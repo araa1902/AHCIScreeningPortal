@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from html import escape
 
 import pandas as pd
@@ -19,7 +20,12 @@ st.set_page_config(
 # Constants
 # --------------------------------------------------
 # Get the directory where this script is located
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Handle both normal execution and Streamlit execution
+if __file__:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+else:
+    # Fallback for Streamlit or other environments where __file__ might not be set
+    SCRIPT_DIR = os.getcwd()
 
 TEAM_MAPPING = {
     "Select your name...": None,
