@@ -120,6 +120,12 @@ st.markdown(
 
 
 # --------------------------------------------------
+# Session State for Review Mode
+# --------------------------------------------------
+if "review_index" not in st.session_state:
+    st.session_state.review_index = 0
+
+# --------------------------------------------------
 # Helpers
 # --------------------------------------------------
 def load_data(file_path: str) -> pd.DataFrame:
@@ -242,12 +248,16 @@ def render_legend():
 # --------------------------------------------------
 with st.sidebar:
     st.title("Settings")
-    app_mode = st.radio("Mode:", ["Individual Screening", "Conflict Resolution"])
+    app_mode = st.radio("Mode:", ["Individual Screening", "Review Decisions", "Conflict Resolution"])
     st.markdown("---")
 
     if app_mode == "Individual Screening":
         selected_user = st.selectbox("Who is screening?", list(TEAM_MAPPING.keys()))
         st.caption("Tip: work top to bottom. Use the criteria panel only when the abstract is ambiguous.")
+    elif app_mode == "Review Decisions":
+        selected_user = st.selectbox("Whose decisions to review?", list(TEAM_MAPPING.keys()))
+        review_filter = st.selectbox("Filter by:", ["All Decided", "Include Only", "For Consideration", "Exclude Only"])
+        st.caption("Review and change any previous decision.")
     else:
         selected_pool = st.selectbox("Which pool to resolve?", ["Select a pool...", "Pool 1 (Aravind & Joel)", "Pool 2 (Chris & Greg)"])
         st.caption("Resolves disagreements and 'For Consideration' votes between reviewers.")
@@ -287,6 +297,56 @@ if app_mode == "Individual Screening":
     # "Go Back" logic for individual mode
     screened_papers = df[df["Reviewer_Decision"] != "Pending"]
     last_screened_index = screened_papers.index[-1] if not screened_papers.empty else None
+
+elif app_mode == "Review Decisions":
+    if selected_user == "Select your name..." or TEAM_MAPPING.get(selected_user) is None:
+        st.markdown('<div class="main-title">Review Decisions</div>', unsafe_allow_html=True)
+        st.markdown('<div class="subtle-text">Select a reviewer in the sidebar to review their decisions.</div>', unsafe_allow_html=True)
+        st.stop()
+
+    target_file = TEAM_MAPPING.get(selected_user)
+    reviewer_name = selected_user.split(" (")[0]
+
+    if not os.path.exists(target_file):
+        st.error(f"File not found: {target_file}")
+        st.stop()
+
+    df = load_data(target_file)
+    
+    # Filter based on review_filter
+    if review_filter == "Include Only":
+        review_df = df[df["Reviewer_Decision"] == "Include"]
+    elif review_filter == "For Consideration":
+        review_df = df[df["Reviewer_Decision"] == "For Consideration"]
+    elif review_filter == "Exclude Only":
+        review_df = df[df["Reviewer_Decision"] == "Exclude"]
+    else:  # All Decided
+        review_df = df[df["Reviewer_Decision"] != "Pending"]
+
+    if review_df.empty:
+        st.info(f"No papers match the filter '{review_filter}'.")
+        st.stop()
+
+    # Reset index for review_df
+    review_df = review_df.reset_index(drop=True)
+    
+    # Clamp session state index
+    if st.session_state.review_index >= len(review_df):
+        st.session_state.review_index = len(review_df) - 1
+    
+    current_review_index = st.session_state.review_index
+    row = review_df.iloc[current_review_index]
+    # Get the original index from df for saving
+    original_index = df[df["Title"] == row["Title"]].index[0]
+    
+    total_items = len(review_df)
+    remaining_count = 0
+    completed_count = total_items
+    progress_ratio = 1.0
+    
+    # Navigation setup
+    is_first = current_review_index == 0
+    is_last = current_review_index == len(review_df) - 1
 
 else: # Conflict Resolution
     if selected_pool == "Select a pool...":
@@ -356,12 +416,31 @@ if app_mode == "Individual Screening" and last_screened_index is not None:
             df.to_csv(target_file, index=False)
             st.rerun()
 
-header_title = "Screening Portal" if app_mode == "Individual Screening" else "Conflict Resolution"
-subtitle = f"{escape(reviewer_name)} · autosaving to {escape(target_file)}" if app_mode == "Individual Screening" else f"Arbitrating {selected_pool} · autosaving to {os.path.basename(RESOLUTION_FILE)}"
+header_title = "Screening Portal" if app_mode == "Individual Screening" else ("Review Decisions" if app_mode == "Review Decisions" else "Conflict Resolution")
+subtitle = f"{escape(reviewer_name)} · autosaving to {escape(target_file)}" if app_mode == "Individual Screening" else (f"{escape(reviewer_name)} reviewing {review_filter} · {current_review_index + 1} / {total_items}" if app_mode == "Review Decisions" else f"Arbitrating {selected_pool} · autosaving to {os.path.basename(RESOLUTION_FILE)}")
 
 st.markdown(f'<div class="main-title">{header_title}</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="subtle-text">{subtitle}</div>', unsafe_allow_html=True)
 st.markdown("")
+
+# Navigation for Review Decisions mode
+if app_mode == "Review Decisions":
+    nav_col1, nav_col2, nav_col3, nav_col4 = st.columns([0.8, 1.5, 1.5, 0.8])
+    with nav_col1:
+        if not is_first:
+            if st.button("← Previous", use_container_width=True):
+                st.session_state.review_index -= 1
+                st.rerun()
+    with nav_col2:
+        st.caption(f"Paper {current_review_index + 1} of {total_items}")
+    with nav_col3:
+        pass
+    with nav_col4:
+        if not is_last:
+            if st.button("Next →", use_container_width=True):
+                st.session_state.review_index += 1
+                st.rerun()
+    st.markdown("")
 
 top_a, top_b, top_c = st.columns([1.2, 1, 1])
 with top_a:
@@ -504,6 +583,37 @@ if app_mode == "Individual Screening":
         if st.button("Exclude", use_container_width=True):
             save_decision(df, current_index, "Exclude", target_file)
             st.rerun()
+
+elif app_mode == "Review Decisions":
+    st.caption(f"Current decision: **{row['Reviewer_Decision']}**. Choose to change it or keep as is.")
+    b1, b2, b3 = st.columns(3)
+    with b1:
+        if st.button("✓ Include", use_container_width=True, type="primary"):
+            save_decision(df, original_index, "Include", target_file)
+            st.success("Decision updated!")
+            if is_last:
+                st.rerun()
+            else:
+                st.session_state.review_index += 1
+                st.rerun()
+    with b2:
+        if st.button("? For Consideration", use_container_width=True):
+            save_decision(df, original_index, "For Consideration", target_file)
+            st.success("Decision updated!")
+            if is_last:
+                st.rerun()
+            else:
+                st.session_state.review_index += 1
+                st.rerun()
+    with b3:
+        if st.button("✕ Exclude", use_container_width=True):
+            save_decision(df, original_index, "Exclude", target_file)
+            st.success("Decision updated!")
+            if is_last:
+                st.rerun()
+            else:
+                st.session_state.review_index += 1
+                st.rerun()
 
 else:
     # Conflict Resolution Mode Actions
