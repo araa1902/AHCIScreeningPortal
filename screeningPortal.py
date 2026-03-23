@@ -145,6 +145,9 @@ def save_decision(df: pd.DataFrame, row_index: int, decision: str, file_path: st
 def save_conflict_resolution(pool: str, title: str, author: str, pub_title: str, v1: str, v2: str, decision: str, rationale: str) -> None:
     if os.path.exists(RESOLUTION_FILE):
         df_res = pd.read_csv(RESOLUTION_FILE)
+        # Rename old column format if it exists
+        if 'Final Ruling (Include/Exclude)' in df_res.columns:
+            df_res.rename(columns={'Final Ruling (Include/Exclude)': 'Final_Decision', 'Rationale (One Sentence)': 'Rationale'}, inplace=True)
     else:
         df_res = pd.DataFrame(columns=['Pool', 'Title', 'Author', 'Publication Title', 'Vote_1', 'Vote_2', 'Final_Decision', 'Rationale'])
 
@@ -163,6 +166,118 @@ def save_conflict_resolution(pool: str, title: str, author: str, pub_title: str,
         df_res = pd.concat([df_res, new_row], ignore_index=True)
 
     df_res.to_csv(RESOLUTION_FILE, index=False)
+
+
+def generate_audit_trail() -> None:
+    """
+    Generate a comprehensive audit trail CSV that shows:
+    - Original votes from both reviewers
+    - Final decisions from conflict resolution
+    - Papers where both reviewers agreed (no conflict)
+    
+    This creates a complete record of the screening process.
+    """
+    import os
+    
+    AUDIT_FILE = os.path.join(SCRIPT_DIR, "Audit_Trail.csv")
+    
+    # Load all reviewer files
+    df_A = pd.read_csv(TEAM_MAPPING["Aravind (Member A) - Pool 1"])
+    df_B = pd.read_csv(TEAM_MAPPING["Joel (Member B) - Pool 1"])
+    df_C = pd.read_csv(TEAM_MAPPING["Chris (Member C) - Pool 2"])
+    df_D = pd.read_csv(TEAM_MAPPING["Greg (Member D) - Pool 2"])
+    
+    # Merge Pool 1 (A & B)
+    pool_1 = pd.merge(
+        df_A[['Title', 'Author', 'Publication Title', 'Reviewer_Decision']],
+        df_B[['Title', 'Reviewer_Decision']],
+        on='Title',
+        suffixes=('_Aravind', '_Joel'),
+        how='inner'
+    )
+    pool_1['Pool'] = 'Pool 1 (Aravind & Joel)'
+    
+    # Merge Pool 2 (C & D)
+    pool_2 = pd.merge(
+        df_C[['Title', 'Author', 'Publication Title', 'Reviewer_Decision']],
+        df_D[['Title', 'Reviewer_Decision']],
+        on='Title',
+        suffixes=('_Chris', '_Greg'),
+        how='inner'
+    )
+    pool_2['Pool'] = 'Pool 2 (Chris & Greg)'
+    
+    # Load conflict resolution data if it exists
+    audit_trail = []
+    
+    # Process Pool 1
+    for _, row in pool_1.iterrows():
+        entry = {
+            'Pool': row['Pool'],
+            'Title': row['Title'],
+            'Author': row['Author'],
+            'Publication Title': row['Publication Title'],
+            'Vote_Reviewer_1': row['Reviewer_Decision_Aravind'],
+            'Vote_Reviewer_2': row['Reviewer_Decision_Joel'],
+            'Agreement': 'Yes' if row['Reviewer_Decision_Aravind'] == row['Reviewer_Decision_Joel'] else 'No',
+            'Final_Decision': None,
+            'Rationale': None,
+            'Status': 'Agreed' if row['Reviewer_Decision_Aravind'] == row['Reviewer_Decision_Joel'] else 'Needs Resolution'
+        }
+        audit_trail.append(entry)
+    
+    # Process Pool 2
+    for _, row in pool_2.iterrows():
+        entry = {
+            'Pool': row['Pool'],
+            'Title': row['Title'],
+            'Author': row['Author'],
+            'Publication Title': row['Publication Title'],
+            'Vote_Reviewer_1': row['Reviewer_Decision_Chris'],
+            'Vote_Reviewer_2': row['Reviewer_Decision_Greg'],
+            'Agreement': 'Yes' if row['Reviewer_Decision_Chris'] == row['Reviewer_Decision_Greg'] else 'No',
+            'Final_Decision': None,
+            'Rationale': None,
+            'Status': 'Agreed' if row['Reviewer_Decision_Chris'] == row['Reviewer_Decision_Greg'] else 'Needs Resolution'
+        }
+        audit_trail.append(entry)
+    
+    # Convert to DataFrame
+    audit_df = pd.DataFrame(audit_trail)
+    
+    # Load and merge conflict resolution data
+    if os.path.exists(RESOLUTION_FILE):
+        res_df = pd.read_csv(RESOLUTION_FILE)
+        
+        # Standardize column names if they use the old format
+        if 'Final Ruling (Include/Exclude)' in res_df.columns:
+            res_df.rename(columns={'Final Ruling (Include/Exclude)': 'Final_Decision', 'Rationale (One Sentence)': 'Rationale'}, inplace=True)
+        
+        # Update audit trail with final decisions and rationales
+        for _, res_row in res_df.iterrows():
+            mask = audit_df['Title'] == res_row['Title']
+            if mask.any():
+                idx = audit_df.index[mask].tolist()[0]
+                audit_df.at[idx, 'Final_Decision'] = res_row.get('Final_Decision', '')
+                audit_df.at[idx, 'Rationale'] = res_row.get('Rationale', '')
+                audit_df.at[idx, 'Status'] = 'Resolved'
+        
+        # For agreed papers, use the agreed decision as final
+        mask_agreed = audit_df['Status'] == 'Agreed'
+        audit_df.loc[mask_agreed, 'Final_Decision'] = audit_df.loc[mask_agreed, 'Vote_Reviewer_1']
+    
+    # Reorder columns for better readability
+    output_columns = [
+        'Pool', 'Title', 'Author', 'Publication Title',
+        'Vote_Reviewer_1', 'Vote_Reviewer_2', 'Agreement',
+        'Final_Decision', 'Rationale', 'Status'
+    ]
+    audit_df = audit_df[output_columns]
+    
+    # Save to CSV
+    audit_df.to_csv(AUDIT_FILE, index=False)
+    
+    return AUDIT_FILE
 
 
 def clean_text(value, fallback="N/A") -> str:
@@ -382,7 +497,9 @@ else: # Conflict Resolution
 
     if os.path.exists(RESOLUTION_FILE):
         res_df = pd.read_csv(RESOLUTION_FILE)
-        resolved_titles = res_df[(res_df['Final_Decision'] == 'Include') | (res_df['Final_Decision'] == 'Exclude')]['Title'].tolist()
+        # Handle both column name formats
+        final_col = 'Final_Decision' if 'Final_Decision' in res_df.columns else 'Final Ruling (Include/Exclude)'
+        resolved_titles = res_df[(res_df[final_col] == 'Include') | (res_df[final_col] == 'Exclude')]['Title'].tolist()
         pending_conflicts = conflicts_df[~conflicts_df['Title'].isin(resolved_titles)]
     else:
         pending_conflicts = conflicts_df
@@ -627,6 +744,7 @@ else:
                 st.warning("Please provide a rationale before saving.")
             else:
                 save_conflict_resolution(selected_pool, row['Title'], row.get('Author', ''), row.get('Publication Title', ''), row['Reviewer_Decision_1'], row['Reviewer_Decision_2'], "Include", rationale)
+                generate_audit_trail()
                 st.rerun()
     with c2:
         if st.button("Final Exclude", use_container_width=True):
@@ -634,6 +752,7 @@ else:
                 st.warning("Please provide a rationale before saving.")
             else:
                 save_conflict_resolution(selected_pool, row['Title'], row.get('Author', ''), row.get('Publication Title', ''), row['Reviewer_Decision_1'], row['Reviewer_Decision_2'], "Exclude", rationale)
+                generate_audit_trail()
                 st.rerun()
 
 st.markdown("")
