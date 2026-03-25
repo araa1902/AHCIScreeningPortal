@@ -27,13 +27,13 @@ else:
 
 TEAM_MAPPING = {
     "Select your name...": None,
-    "Aravind (Member A) - Pool 1": os.path.join(SCRIPT_DIR, "Pool_1_Reviewer_A.csv"),
-    "Joel (Member B) - Pool 1": os.path.join(SCRIPT_DIR, "Pool_1_Reviewer_B.csv"),
-    "Chris (Member C) - Pool 2": os.path.join(SCRIPT_DIR, "Pool_2_Reviewer_C.csv"),
-    "Greg (Member D) - Pool 2": os.path.join(SCRIPT_DIR, "Pool_2_Reviewer_D.csv"),
+    "Aravind (Member A) - Pool 1": os.path.join(SCRIPT_DIR, "../data/screening/Pool_1_Reviewer_A.csv"),
+    "Joel (Member B) - Pool 1": os.path.join(SCRIPT_DIR, "../data/screening/Pool_1_Reviewer_B.csv"),
+    "Chris (Member C) - Pool 2": os.path.join(SCRIPT_DIR, "../data/screening/Pool_2_Reviewer_C.csv"),
+    "Greg (Member D) - Pool 2": os.path.join(SCRIPT_DIR, "../data/screening/Pool_2_Reviewer_D.csv"),
 }
 
-RESOLUTION_FILE = os.path.join(SCRIPT_DIR, "Conflict_Resolution_Log.csv")
+RESOLUTION_FILE = os.path.join(SCRIPT_DIR, "../data/audit/Conflict_Resolution_Log.csv")
 
 DECISION_OPTIONS = ["Include", "For Consideration", "Exclude"]
 YEAR_MIN = 2021

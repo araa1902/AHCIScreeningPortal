@@ -13,10 +13,20 @@ __pycache__/
 .idea/
 *.swp
 *.swo
-
+*.csv
 # OS
 .DS_Store
 .AppleDouble
+
+# Sensitive configuration
+config/.zotero_config.json
+
+# Logs
+src/logs/
+*.log
+
+# Streamlit cache
+.streamlit/
 
 # Generated files (don't commit screening progress)
 Conflict_Resolution_Log.csv

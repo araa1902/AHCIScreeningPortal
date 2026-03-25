@@ -8,11 +8,11 @@ print("📚 Initiating Systematic Review Audit Phase...")
 
 # --- 1. Load the Completed Datasets ---
 # Pool 1
-df_A = pd.read_csv("Pool_1_Reviewer_A.csv")
-df_B = pd.read_csv("Pool_1_Reviewer_B.csv")
+df_A = pd.read_csv("../data/screening/Pool_1_Reviewer_A.csv")
+df_B = pd.read_csv("../data/screening/Pool_1_Reviewer_B.csv")
 # Pool 2
-df_C = pd.read_csv("Pool_2_Reviewer_C.csv")
-df_D = pd.read_csv("Pool_2_Reviewer_D.csv")
+df_C = pd.read_csv("../data/screening/Pool_2_Reviewer_C.csv")
+df_D = pd.read_csv("../data/screening/Pool_2_Reviewer_D.csv")
 
 # --- 2. Merge Pools for Comparison ---
 # Merging on Title ensures we align the exact same papers
@@ -93,7 +93,7 @@ screening_log_data = {
 }
 
 screening_log_df = pd.DataFrame(screening_log_data)
-screening_log_df.to_csv("Screening_Log.csv", index=False)
+screening_log_df.to_csv("../data/screening/Screening_Log.csv", index=False)
 
 # Also save as JSON for structured metadata
 import json
@@ -118,7 +118,7 @@ screening_log_json = {
     }
 }
 
-with open("Screening_Log.json", "w") as f:
+with open("../data/screening/Screening_Log.json", "w") as f:
     json.dump(screening_log_json, f, indent=2)
 
 print(f"\n✅ Created 'Screening_Log.csv' and 'Screening_Log.json' with all PRISMA Stage 2 metrics.")
@@ -151,7 +151,7 @@ output_columns = ['Pool', 'Title', 'Author', 'Publication Title', 'Vote_1', 'Vot
 all_conflicts = all_conflicts[output_columns]
 
 # Save to CSV
-all_conflicts.to_csv("Conflict_Resolution_Log.csv", index=False)
+all_conflicts.to_csv("../data/audit/Conflict_Resolution_Log.csv", index=False)
 print(f"\n✅ Created 'Conflict_Resolution_Log.csv' with {len(all_conflicts)} disputed papers ready for arbitration.")
 
 # --- 7. Generate THE AUDIT TRAIL (Complete Screening Record) ---
@@ -198,8 +198,8 @@ audit_df = pd.DataFrame(audit_trail)
 
 # Load and merge conflict resolution data if it exists
 import os
-if os.path.exists("Conflict_Resolution_Log.csv"):
-    res_df = pd.read_csv("Conflict_Resolution_Log.csv")
+if os.path.exists("../data/audit/Conflict_Resolution_Log.csv"):
+    res_df = pd.read_csv("../data/audit/Conflict_Resolution_Log.csv")
     
     # Update audit trail with final decisions and rationales
     for _, res_row in res_df.iterrows():
@@ -227,7 +227,7 @@ output_columns = [
 audit_df = audit_df[output_columns]
 
 # Save to CSV
-audit_df.to_csv("Audit_Trail.csv", index=False)
+audit_df.to_csv("../data/audit/Audit_Trail.csv", index=False)
 print(f"\n✅ Created 'Audit_Trail.csv' with complete screening history:")
 print(f"   - Total papers: {len(audit_df)}")
 print(f"   - Agreed decisions: {len(audit_df[audit_df['Status'] == 'Agreed'])}")
