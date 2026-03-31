@@ -16,8 +16,8 @@ EXCLUSION_REASONS = [
     "Non-interactive AI: No live user interaction",
     "Insufficient outcomes: No measurable behavioral metrics",
     "Non-eligible type: Abstract only, thesis, grey literature",
-    "Wrong language: Full-text not available in English",
-    "Unavailable / Duplicate: Cannot access PDF or duplicate record"
+    "Non-peer reviewed: Unconfirmed preprint or non-qualifying venue",
+    "Wrong language: Full-text not available in English"
 ]
 
 st.sidebar.title("Phase 3 Authentication")
