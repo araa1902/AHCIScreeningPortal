@@ -106,9 +106,3 @@ Decisions save automatically to your CSV file in `data/screening/`.
 - pyzotero (for Zotero sync)
 
 See `config/requirements.txt` for full list.
-
-## Documentation
-
-- `ZOTERO_GROUP_SETUP.md` - Setup for group libraries
-
-All installed with: `pip install -r requirements.txt`
