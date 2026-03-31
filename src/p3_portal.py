@@ -331,3 +331,80 @@ with tab5:
         st.dataframe(exclusion_counts, use_container_width=True, hide_index=True)
     else:
         st.info("No papers have been fully excluded yet.")
+    
+    st.markdown("---")
+    
+    st.markdown("### Export PRISMA Flow Data")
+    st.markdown("Download your PRISMA data to construct the flowchart in draw.io, Visio, or similar tools.")
+    
+    # Prepare PRISMA summary export
+    prisma_summary = {
+        'Phase': ['Identification', 'Screening', 'Eligibility', 'Included'],
+        'Stage': [
+            'Total records identified',
+            'Records screened (Phase 2 survivors)',
+            'Full-text articles assessed',
+            'Studies included in synthesis'
+        ],
+        'Count': [
+            total_papers,  # Total in this tracker (Phase 3 corpus)
+            total_papers,  # All screened in Phase 3
+            total_papers,  # All assessed for eligibility
+            total_included  # Final included
+        ],
+        'Details': [
+            'Papers advanced from Phase 2 (Title/Abstract)',
+            'Full-text articles retrieved',
+            f'Excluded: {total_excluded} | Conflicts: {total_conflicts} | Pending: {pending}',
+            f'Ready for Quality Assessment (JBI)'
+        ]
+    }
+    prisma_df = pd.DataFrame(prisma_summary)
+    
+    # Prepare exclusion reasons export
+    exclusion_export = df[df['Final_Decision'] == 'Exclude'][['Title', 'Author', 'Exclusion_Reason', 'Exclusion_Notes']].copy()
+    exclusion_export.columns = ['Paper Title', 'Authors', 'Exclusion Reason', 'Notes']
+    
+    # Create CSV exports
+    col_exp1, col_exp2 = st.columns(2)
+    
+    with col_exp1:
+        csv_prisma = prisma_df.to_csv(index=False)
+        st.download_button(
+            label="Download PRISMA Summary (CSV)",
+            data=csv_prisma,
+            file_name="PRISMA_Flow_Summary.csv",
+            mime="text/csv",
+            help="Contains counts for each PRISMA stage. Import into your flowchart tool."
+        )
+    
+    with col_exp2:
+        csv_exclusions = exclusion_export.to_csv(index=False)
+        st.download_button(
+            label="Download Exclusion Details (CSV)",
+            data=csv_exclusions,
+            file_name="PRISMA_Excluded_Papers.csv",
+            mime="text/csv",
+            help="Detailed list of excluded papers with reasons. Supports PRISMA appendix documentation."
+        )
+    
+    st.markdown("---")
+    
+    st.markdown("**How to use these exports:**")
+    st.markdown("""
+    1. **PRISMA Flow Summary:** 
+       - Open in Excel or use directly in draw.io/Visio
+       - Fill your flowchart boxes with the 'Count' column values
+       - Use 'Details' column as reference for decision nodes
+    
+    2. **Excluded Papers List:**
+       - Use for PRISMA Table 1 (Characteristics of Excluded Studies)
+       - Organize by exclusion reason for the final report
+       - Provides audit trail for methodological rigor
+    
+    3. **Constructing the Diagram:**
+       - Identification phase: Start with Phase 2 total
+       - Screening: Show Phase 3 full-texts assessed
+       - Eligibility: Breakdown by Excluded/Conflicts/Pending
+       - Included: Final synthesis corpus count
+    """)
