@@ -126,9 +126,9 @@ with tab1:
         with c2:
             with st.container(border=True):
                 st.markdown("**EXCLUDE (Requires Verification)**")
-                reason = st.selectbox("PRISMA Exclusion Reason:", EXCLUSION_REASONS, key="exc_reason")
+                reason = st.selectbox("PRISMA Exclusion Reason:", EXCLUSION_REASONS, key=f"exc_reason_{current_idx}")
                 # NEW: Notes field for rigorous audit trail
-                notes = st.text_area("Additional Notes (Briefly explain why it fails):", placeholder="e.g., The study only measures system latency, not user trust...")
+                notes = st.text_area("Additional Notes (Briefly explain why it fails):", placeholder="e.g., The study only measures system latency, not user trust...", key=f"exc_notes_{current_idx}")
                 
                 if st.button("Submit Exclusion", use_container_width=True):
                     if reason == "Select a reason...":
@@ -235,6 +235,9 @@ with tab3:
 # ==========================================
 # TAB 4: JBI QUALITY APPRAISAL
 # ==========================================
+# ==========================================
+# TAB 4: JBI QUALITY APPRAISAL
+# ==========================================
 with tab4:
     st.header("JBI Critical Appraisal")
     pending_jbi = df[(df['Final_Decision'] == 'Include') & 
@@ -256,20 +259,37 @@ with tab4:
         
         st.markdown("---")
         
-        q1 = st.radio("1. Was the sample clearly defined and representative?", ("Yes", "No", "Unclear"), horizontal=True)
-        q2 = st.radio("2. Were the participants' demographics appropriately detailed?", ("Yes", "No", "Unclear"), horizontal=True)
-        q3 = st.radio("3. Was the conversational AI interface clearly described?", ("Yes", "No", "Unclear"), horizontal=True)
-        q4 = st.radio("4. Were confounding factors identified?", ("Yes", "No", "Unclear"), horizontal=True)
-        q5 = st.radio("5. Were strategies to deal with confounding factors stated?", ("Yes", "No", "Unclear"), horizontal=True)
-        q6 = st.radio("6. Were outcomes measured in a valid and reliable way?", ("Yes", "No", "Unclear"), horizontal=True)
-        q7 = st.radio("7. Was the statistical/qualitative analysis appropriate?", ("Yes", "No", "Unclear"), horizontal=True)
-        q8 = st.radio("8. Are the ethical considerations addressed?", ("Yes", "No", "Unclear"), horizontal=True)
+        options = ("Yes", "No", "Unclear", "N/A")
+        
+        q1 = st.radio("1. Was the sample clearly defined and representative?", options, horizontal=True)
+        q2 = st.radio("2. Were the participants' demographics appropriately detailed?", options, horizontal=True)
+        q3 = st.radio("3. Was the conversational AI interface clearly described?", options, horizontal=True)
+        q4 = st.radio("4. Were confounding factors identified?", options, horizontal=True)
+        q5 = st.radio("5. Were strategies to deal with confounding factors stated?", options, horizontal=True)
+        q6 = st.radio("6. Were behavioral outcomes (trust, deception, compliance) measured in a valid and reliable way?", options, horizontal=True)
+        q7 = st.radio("7. Was the statistical/qualitative analysis appropriate?", options, horizontal=True)
+        q8 = st.radio("8. Are the ethical considerations addressed?", options, horizontal=True)
+        
+        st.markdown("---")
+        jbi_comment = st.text_area("Critical Appraisal Notes (Optional)", 
+                                   help="Explain any 'No', 'Unclear', or 'N/A' ratings here. This is vital for our final methodology write-up.")
         
         if st.button("Save Quality Score", type="primary"):
             answers = [q1, q2, q3, q4, q5, q6, q7, q8]
-            score = answers.count("Yes")
-            df.at[jbi_idx, 'JBI_Score'] = f"{score}/8"
+            yes_count = answers.count("Yes")
+            na_count = answers.count("N/A")
+            applicable_total = 8 - na_count
+            
+            # Format score dynamically based on applicable questions
+            if applicable_total == 0:
+                score_str = "0/0"
+            else:
+                score_str = f"{yes_count}/{applicable_total}"
+                
+            df.at[jbi_idx, 'JBI_Score'] = score_str
             df.at[jbi_idx, 'JBI_Details'] = str(answers)
+            df.at[jbi_idx, 'JBI_Notes'] = jbi_comment
+            
             save_data()
             st.rerun()
 
