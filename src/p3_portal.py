@@ -15,7 +15,9 @@ EXCLUSION_REASONS = [
     "Pure theory: No empirical interface analysis",
     "Non-interactive AI: No live user interaction",
     "Insufficient outcomes: No measurable behavioral metrics",
-    "Non-eligible type: Abstract only, thesis, grey literature"
+    "Non-eligible type: Abstract only, thesis, grey literature",
+    "Wrong language: Full-text not available in English",
+    "Unavailable / Duplicate: Cannot access PDF or duplicate record"
 ]
 
 st.sidebar.title("Phase 3 Authentication")
