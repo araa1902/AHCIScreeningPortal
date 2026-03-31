@@ -2,17 +2,22 @@ import pandas as pd
 from sklearn.metrics import cohen_kappa_score
 import json
 import warnings
+import os
 warnings.filterwarnings('ignore') # Suppress pandas merge warnings
 
-print("📚 Initiating Systematic Review Audit Phase...")
+print("Initiating Systematic Review Audit Phase...")
+
+# Get the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+base_dir = os.path.dirname(script_dir)  # Parent directory
 
 # --- 1. Load the Completed Datasets ---
 # Pool 1
-df_A = pd.read_csv("../data/screening/Pool_1_Reviewer_A.csv")
-df_B = pd.read_csv("../data/screening/Pool_1_Reviewer_B.csv")
+df_A = pd.read_csv(os.path.join(base_dir, "data/screening/Pool_1_Reviewer_A.csv"))
+df_B = pd.read_csv(os.path.join(base_dir, "data/screening/Pool_1_Reviewer_B.csv"))
 # Pool 2
-df_C = pd.read_csv("../data/screening/Pool_2_Reviewer_C.csv")
-df_D = pd.read_csv("../data/screening/Pool_2_Reviewer_D.csv")
+df_C = pd.read_csv(os.path.join(base_dir, "data/screening/Pool_2_Reviewer_C.csv"))
+df_D = pd.read_csv(os.path.join(base_dir, "data/screening/Pool_2_Reviewer_D.csv"))
 
 # --- 2. Merge Pools for Comparison ---
 # Merging on Title ensures we align the exact same papers
@@ -46,7 +51,7 @@ p2_stats = calculate_tallies(pool_2, 'Reviewer_Decision_C', 'Reviewer_Decision_D
 
 # --- 5. Generate THE SCREENING LOG (Console Output for Report) ---
 print("\n" + "="*50)
-print("📊 THE SCREENING LOG (PRISMA STAGE 2)")
+print("THE SCREENING LOG (PRISMA STAGE 2)")
 print("="*50)
 print(f"Total Papers Screened: {len(pool_1) + len(pool_2)}")
 print(f"\n--- POOL 1 (Aravind & Joel) ---")
@@ -93,7 +98,7 @@ screening_log_data = {
 }
 
 screening_log_df = pd.DataFrame(screening_log_data)
-screening_log_df.to_csv("../data/screening/Screening_Log.csv", index=False)
+screening_log_df.to_csv(os.path.join(base_dir, "data/screening/Screening_Log.csv"), index=False)
 
 # Also save as JSON for structured metadata
 import json
@@ -118,10 +123,10 @@ screening_log_json = {
     }
 }
 
-with open("../data/screening/Screening_Log.json", "w") as f:
+with open(os.path.join(base_dir, "data/screening/Screening_Log.json"), "w") as f:
     json.dump(screening_log_json, f, indent=2)
 
-print(f"\n✅ Created 'Screening_Log.csv' and 'Screening_Log.json' with all PRISMA Stage 2 metrics.")
+print(f"\nCreated 'Screening_Log.csv' and 'Screening_Log.json' with all PRISMA Stage 2 metrics.")
 
 # --- 6. Generate THE CONFLICT RESOLUTION LOG (CSV Output) ---
 # Isolate all rows where raters disagreed OR someone voted "For Consideration"
@@ -151,12 +156,12 @@ output_columns = ['Pool', 'Title', 'Author', 'Publication Title', 'Vote_1', 'Vot
 all_conflicts = all_conflicts[output_columns]
 
 # Save to CSV
-all_conflicts.to_csv("../data/audit/Conflict_Resolution_Log.csv", index=False)
-print(f"\n✅ Created 'Conflict_Resolution_Log.csv' with {len(all_conflicts)} disputed papers ready for arbitration.")
+all_conflicts.to_csv(os.path.join(base_dir, "data/audit/Conflict_Resolution_Log.csv"), index=False)
+print(f"\nCreated 'Conflict_Resolution_Log.csv' with {len(all_conflicts)} disputed papers ready for arbitration.")
 
 # --- 7. Generate THE AUDIT TRAIL (Complete Screening Record) ---
 print("\n" + "="*50)
-print("📋 GENERATING AUDIT TRAIL")
+print("GENERATING AUDIT TRAIL")
 print("="*50)
 
 audit_trail = []
@@ -196,27 +201,42 @@ for _, row in pool_2.iterrows():
 # Convert to DataFrame
 audit_df = pd.DataFrame(audit_trail)
 
-# Load and merge conflict resolution data if it exists
-import os
-if os.path.exists("../data/audit/Conflict_Resolution_Log.csv"):
-    res_df = pd.read_csv("../data/audit/Conflict_Resolution_Log.csv")
+# Load and merge conflict resolution data from both pools
+res_dfs = []
+
+# Try the main conflict resolution log first
+main_log = os.path.join(base_dir, "data/audit/Conflict_Resolution_Log.csv")
+if os.path.exists(main_log):
+    res_dfs.append(pd.read_csv(main_log))
+
+# Also load pool-specific logs if they exist
+p1_log = os.path.join(base_dir, "data/conflictResLogs/Conflict_Resolution_Log_P1.csv")
+p2_log = os.path.join(base_dir, "data/conflictResLogs/Conflict_Resolution_Log_P2.csv")
+
+if os.path.exists(p1_log):
+    res_dfs.append(pd.read_csv(p1_log))
+if os.path.exists(p2_log):
+    res_dfs.append(pd.read_csv(p2_log))
+
+if res_dfs:
+    res_df = pd.concat(res_dfs, ignore_index=True)
     
     # Update audit trail with final decisions and rationales
     for _, res_row in res_df.iterrows():
         mask = audit_df['Title'] == res_row['Title']
         if mask.any():
             idx = audit_df.index[mask].tolist()[0]
-            # Map the old column names to new ones
-            final_decision = res_row.get('Final Ruling (Include/Exclude)', res_row.get('Final_Decision'))
-            rationale = res_row.get('Rationale (One Sentence)', res_row.get('Rationale'))
+            # Get final decision and rationale from resolution data
+            final_decision = res_row.get('Final_Decision') or res_row.get('Final Ruling (Include/Exclude)')
+            rationale = res_row.get('Rationale') or res_row.get('Rationale (One Sentence)')
             
             audit_df.at[idx, 'Final_Decision'] = final_decision
             audit_df.at[idx, 'Rationale'] = rationale
             audit_df.at[idx, 'Status'] = 'Resolved'
-    
-    # For agreed papers, use the agreed decision as final
-    mask_agreed = audit_df['Status'] == 'Agreed'
-    audit_df.loc[mask_agreed, 'Final_Decision'] = audit_df.loc[mask_agreed, 'Vote_Reviewer_1']
+
+# For agreed papers, use the agreed decision as final
+mask_agreed = audit_df['Status'] == 'Agreed'
+audit_df.loc[mask_agreed, 'Final_Decision'] = audit_df.loc[mask_agreed, 'Vote_Reviewer_1']
 
 # Reorder columns for better readability
 output_columns = [
@@ -227,8 +247,8 @@ output_columns = [
 audit_df = audit_df[output_columns]
 
 # Save to CSV
-audit_df.to_csv("../data/audit/Audit_Trail.csv", index=False)
-print(f"\n✅ Created 'Audit_Trail.csv' with complete screening history:")
+audit_df.to_csv(os.path.join(base_dir, "data/audit/Audit_Trail.csv"), index=False)
+print(f"\nCreated 'Audit_Trail.csv' with complete screening history:")
 print(f"   - Total papers: {len(audit_df)}")
 print(f"   - Agreed decisions: {len(audit_df[audit_df['Status'] == 'Agreed'])}")
 print(f"   - Needing resolution: {len(audit_df[audit_df['Status'] == 'Needs Resolution'])}")

@@ -13,7 +13,6 @@ __pycache__/
 .idea/
 *.swp
 *.swo
-*.csv
 # OS
 .DS_Store
 .AppleDouble

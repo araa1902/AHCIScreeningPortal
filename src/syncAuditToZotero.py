@@ -25,7 +25,7 @@ from datetime import datetime
 try:
     from pyzotero import zotero
 except ImportError:
-    print("❌ pyzotero not installed. Install it with: pip install pyzotero")
+    print("pyzotero not installed. Install it with: pip install pyzotero")
     sys.exit(1)
 
 
@@ -88,26 +88,26 @@ def clean_text(text):
 def load_config():
     """Load Zotero credentials from config file."""
     if not os.path.exists(CONFIG_FILE):
-        print(f"❌ Config file '{CONFIG_FILE}' not found.")
+        print(f"Config file '{CONFIG_FILE}' not found.")
         sys.exit(1)
     
     try:
         with open(CONFIG_FILE, 'r') as f:
             return json.load(f)
     except json.JSONDecodeError:
-        print(f"❌ Invalid JSON in {CONFIG_FILE}")
+        print(f"Invalid JSON in {CONFIG_FILE}")
         sys.exit(1)
 
 def load_audit_trail():
     """Load the Audit_Trail.csv"""
     if not os.path.exists(AUDIT_FILE):
-        print(f"❌ {AUDIT_FILE} not found. Please ensure it is in the same directory.")
+        print(f"{AUDIT_FILE} not found. Please ensure it is in the same directory.")
         sys.exit(1)
     
     try:
         return pd.read_csv(AUDIT_FILE)
     except Exception as e:
-        print(f"❌ Error reading {AUDIT_FILE}: {e}")
+        print(f"Error reading {AUDIT_FILE}: {e}")
         sys.exit(1)
 
 def init_zotero(config):
@@ -123,7 +123,7 @@ def init_zotero(config):
         z.key_info()
         return z
     except Exception as e:
-        print(f"❌ Failed to connect to Zotero: {e}")
+        print(f"Failed to connect to Zotero: {e}")
         sys.exit(1)
 
 def find_collections(z):
@@ -145,19 +145,19 @@ def find_collections(z):
         missing = [name for name in ZOTERO_COLLECTIONS.keys() if name not in collection_map]
         
         if missing:
-            print(f"❌ Missing collections in Zotero: {', '.join(missing)}. Please create them first.")
+            print(f"Missing collections in Zotero: {', '.join(missing)}. Please create them first.")
             sys.exit(1)
             
         for name in ZOTERO_COLLECTIONS.keys():
             ZOTERO_COLLECTIONS[name] = collection_map[name]
         
-        print("✅ Found collections:")
+        print("Found collections:")
         for name, key in ZOTERO_COLLECTIONS.items():
             print(f"   - {name}: {key}")
         
         return True
     except Exception as e:
-        print(f"❌ Error fetching collections: {e}")
+        print(f"Error fetching collections: {e}")
         sys.exit(1)
 
 def load_all_zotero_items(z):
@@ -168,7 +168,7 @@ def load_all_zotero_items(z):
         return _ZOTERO_ITEMS_CACHE
     
     try:
-        print("📥 Loading all items from Zotero (this may take a moment)...")
+        print("Loading all items from Zotero (this may take a moment)...")
         all_items = []
         start = 0
         limit = 100 
@@ -186,7 +186,7 @@ def load_all_zotero_items(z):
         
         _ZOTERO_ITEMS_CACHE = all_items
         _ZOTERO_ITEMS_CACHE_LOADED = True
-        logger.info(f"✅ Loaded {len(all_items)} total items from Zotero")
+        logger.info(f"Loaded {len(all_items)} total items from Zotero")
         return all_items
     except Exception as e:
         logger.error(f"Error loading Zotero items: {e}")
@@ -249,13 +249,13 @@ def add_paper_to_collection(z, item, collection_key):
 
 def sync_audit_to_zotero(audit_df, z):
     """Sync audit trail decisions to Zotero with batch processing."""
-    print("\n" + "="*60 + "\n📚 SYNCING AUDIT TRAIL TO ZOTERO\n" + "="*60)
+    print("\n" + "="*60 + "\nSYNCING AUDIT TRAIL TO ZOTERO\n" + "="*60)
     
     # Filter for valid Include/Exclude decisions
     decided_papers = audit_df[audit_df['Final_Decision'].isin(['Include', 'Exclude'])].copy()
     
     if decided_papers.empty:
-        print("⚠️ No papers with 'Include' or 'Exclude' decisions found in Audit_Trail.csv")
+        print("WARNING: No papers with 'Include' or 'Exclude' decisions found in Audit_Trail.csv")
         return
     
     print(f"\nTotal papers to sync: {len(decided_papers)}")
@@ -281,31 +281,31 @@ def sync_audit_to_zotero(audit_df, z):
             if result is True:
                 if decision == 'Include': results['added_to_inclusion'] += 1
                 else: results['added_to_exclusion'] += 1
-                print(f"  ✅ Added to {decision}: {title[:60]}...")
+                print(f"  Added to {decision}: {title[:60]}...")
             elif result is None:
                 results['already_in'] += 1
-                print(f"  ℹ️ Already in {decision}: {title[:60]}...")
+                print(f"  Already in {decision}: {title[:60]}...")
             else:
                 results['errors'] += 1
                 failed_papers.append((title, decision, 'API Update Failed'))
-                print(f"  ⚠️ Error updating: {title[:60]}...")
+                print(f"  Error updating: {title[:60]}...")
         else:
             results['not_found'] += 1
             failed_papers.append((title, decision, 'Not found in Zotero'))
-            print(f"  ❌ Not found: {title[:60]}...")
+            print(f"  Not found: {title[:60]}...")
         
         if (batch_idx + 1) % BATCH_SIZE == 0:
             time.sleep(1) # Extra buffer for rate limits
 
     # Print Summary
-    print("\n" + "="*60 + "\n📊 SYNC SUMMARY\n" + "="*60)
+    print("\n" + "="*60 + "\nSYNC SUMMARY\n" + "="*60)
     print(f"Papers synced: {results['added_to_inclusion'] + results['added_to_exclusion']} (Included: {results['added_to_inclusion']}, Excluded: {results['added_to_exclusion']})")
     print(f"Already mapped: {results['already_in']}")
     print(f"Missing in Zotero: {results['not_found']}")
     print(f"Errors: {results['errors']}\n" + "="*60)
 
     if failed_papers:
-        print("\n❌ MISSING/FAILED PAPERS REPORT saved to log.")
+        print("\nMISSING/FAILED PAPERS REPORT saved to log.")
         for title, col, reason in failed_papers:
             logger.error(f"Failed: {title} | Target: {col} | Reason: {reason}")
             
@@ -313,21 +313,21 @@ def sync_audit_to_zotero(audit_df, z):
 # Main
 # --------------------------------------------------
 def main():
-    print("🔄 Zotero Audit Trail Sync Tool Started")
+    print("Zotero Audit Trail Sync Tool Started")
     try:
         config = load_config()
         audit_df = load_audit_trail()
         
         z = init_zotero(config)
-        print("✅ Connected to Zotero Group Library")
+        print("Connected to Zotero Group Library")
         
         find_collections(z)
         sync_audit_to_zotero(audit_df, z)
         
-        print("\n✅ Sync complete! Check your Zotero Library.")
+        print("\nSync complete! Check your Zotero Library.")
     except Exception as e:
         logger.exception("Fatal Error")
-        print(f"\n❌ Fatal error: {e}")
+        print(f"\nFatal error: {e}")
 
 if __name__ == "__main__":
     main()
