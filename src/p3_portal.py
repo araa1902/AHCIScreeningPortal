@@ -296,12 +296,14 @@ with tab4:
         
         st.markdown("---")
         jbi_comment = st.text_area("Critical Appraisal Notes (Optional)", 
-                                   help="Explain any 'No', 'Unclear', or 'N/A' ratings here. This is vital for our final methodology write-up.")
+                                   help="Explain any 'No', 'Unclear', or 'N/A' ratings here. This is vital for our final methodology write-up.",
+                                   key=f"jbi_notes_{jbi_idx}")
         
         if st.button("Save Quality Score", type="primary"):
             answers = [q1, q2, q3, q4, q5, q6, q7, q8]
             yes_count = answers.count("Yes")
             na_count = answers.count("N/A")
+            unclear_count = answers.count("Unclear")
             applicable_total = 8 - na_count
             
             # Format score dynamically based on applicable questions
