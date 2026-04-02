@@ -29,3 +29,4 @@ src/logs/
 
 # Generated files (don't commit screening progress)
 Conflict_Resolution_Log.csv
+data/screening/Phase3_Tracker.csv
