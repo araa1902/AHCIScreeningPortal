@@ -250,6 +250,30 @@ with tab4:
         jbi_idx = pending_jbi.index[0]
         jbi_row = df.loc[jbi_idx]
         
+        # Progress display
+        total_to_appraise = len(df[(df['Final_Decision'] == 'Include') & 
+                                    (df['Primary_Reviewer'] == current_user)])
+        completed_appraisal = len(df[(df['Final_Decision'] == 'Include') & 
+                                      (df['Primary_Reviewer'] == current_user) & 
+                                      (df['JBI_Score'].notna())])
+        remaining = total_to_appraise - completed_appraisal
+        
+        # Progress metrics
+        col_prog1, col_prog2, col_prog3 = st.columns(3)
+        with col_prog1:
+            st.metric("Total to Appraise", total_to_appraise)
+        with col_prog2:
+            st.metric("Completed", completed_appraisal)
+        with col_prog3:
+            st.metric("Remaining", remaining)
+        
+        # Progress bar
+        if total_to_appraise > 0:
+            progress_pct = completed_appraisal / total_to_appraise
+            st.progress(progress_pct, text=f"JBI Appraisal Progress: {completed_appraisal}/{total_to_appraise}")
+        
+        st.markdown("---")
+        
         st.subheader(jbi_row['Title'])
         st.markdown("---")
         
